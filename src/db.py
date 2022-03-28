@@ -11,7 +11,7 @@ class DB:
         id: Integer Primary Key
         username: String(256) NOT NULL UNIQUE = TRUE
         password: String(256) NOT NULL
-        email_address: String(256) NOT NULL UNIQUE = TRUE
+        email: String(256) NOT NULL UNIQUE = TRUE
     <<<--------------------------------------------------->>>
     tabel = referral_model
         id: Integer Primary Key
@@ -80,10 +80,9 @@ class DB:
         connection: asyncpg.Connection = None
         try:
             connection: asyncpg.Connection = await asyncpg.connect(DATABASE_URL)
-            user = await connection.fetch(
+            return (await connection.fetch(
                 f"SELECT id FROM user_model WHERE username='{username}'"
-            )
-            return user[0]
+            ))[0]
         except Exception as error:
             raise error
         finally:
@@ -96,10 +95,9 @@ class DB:
         connection: asyncpg.Connection = None
         try:
             connection: asyncpg.Connection = await asyncpg.connect(DATABASE_URL)
-            ref = await connection.fetch(
-                f"SELECT referral_code, referrer, ref_users FROM referral_model WHERE referral_code='{referral}'"
-            )
-            return dict(ref[0])
+            return dict((await connection.fetch(
+                f"SELECT referral_code, referrer, ref_users, user_id FROM referral_model WHERE referral_code='{referral}'"
+            ))[0])
         except Exception as error:
             raise error
         finally:
@@ -112,10 +110,26 @@ class DB:
         connection: asyncpg.Connection = None
         try:
             connection: asyncpg.Connection = await asyncpg.connect(DATABASE_URL)
-            ref = await connection.fetch(
+            return dict((await connection.fetch(
                 f"SELECT referral_code, referrer, ref_users, reg_time FROM referral_model WHERE user_id={user_id}"
-            )
-            return dict(ref[0])
+            ))[0])
+        except Exception as error:
+            raise error
+        finally:
+            if connection is not None:
+                await connection.close()
+
+    @staticmethod
+    async def get_username_by_referral_code(referrer: str) -> typing.Dict:
+        """Get information about the user by his referral code"""
+        connection: asyncpg.Connection = None
+        ref_info = await DB.get_referrer_by_referral_code(referral=referrer)
+        try:
+            connection: asyncpg.Connection = await asyncpg.connect(DATABASE_URL)
+            user_info = dict((await connection.fetch(
+                f"SELECT username, email FROM user_model WHERE id={ref_info['user_id']}"
+            ))[0])
+            return {**ref_info, **user_info}
         except Exception as error:
             raise error
         finally:

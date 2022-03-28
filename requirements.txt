@@ -1,1 +1,4 @@
-asyncpg==0.25.0
+asyncpg
+aiohttp
+aiofiles
+aio_pika
