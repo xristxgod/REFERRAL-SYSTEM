@@ -2,9 +2,9 @@ import json
 import typing
 from datetime import datetime
 
-from src.db import db
+from src import db
 from src.sender import send_to_email, send_to_bot, send_to_rabbit_mq
-from src.utils import get_datetime_now, is_there_user
+from src.utils import utils
 
 async def search_by_ref_code(referrer: str, user_id: int, lvl: int = 1) -> bool:
     """
@@ -16,17 +16,17 @@ async def search_by_ref_code(referrer: str, user_id: int, lvl: int = 1) -> bool:
     result = await db.get_referrer_by_referral_code(referral=referrer)
     ref_users = json.loads(result["ref_users"])
     for key, value in ref_users.items():
-        if is_there_user(ref_user=value, user_id=user_id):
+        if utils.is_there_user(ref_user=value, user_id=user_id):
             return True
     if lvl >= 4:
         ref_users["lvl_4"].append({
             "user_id": user_id,
-            "time": get_datetime_now()
+            "time": utils.get_datetime_now()
         })
     else:
         ref_users[f"lvl_{lvl}"].append({
             "user_id": user_id,
-            "time": get_datetime_now()
+            "time": utils.get_datetime_now()
         })
     status = await db.update_referral_lvl_by_user_id(
         user_id=user_id,

@@ -6,8 +6,8 @@ from email.mime.text import MIMEText
 import aiohttp
 import aio_pika
 
-from src.utils import get_chat_id_in_file
-from config import TB_TOKEN, RABBIT_MQ_URL, QUEUE, SENDER_PASSWORD, SENDER_EMAIL, logger
+from src.utils import utils
+from config import Config, logger
 
 async def send_to_bot(message: str):
     """
@@ -17,10 +17,10 @@ async def send_to_bot(message: str):
     """
     try:
         async with aiohttp.ClientSession() as session:
-            for user_id in await get_chat_id_in_file():
+            for user_id in await utils.get_chat_id_in_file():
                 # Send a request to the bot.
                 async with session.get(
-                    f"https://api.telegram.org/bot{TB_TOKEN}/sendMessage",
+                    f"https://api.telegram.org/bot{Config.TB_TOKEN}/sendMessage",
                     params={
                         # You can get it from @username_to_id_bot.
                         "chat_id": user_id,
@@ -41,13 +41,13 @@ async def send_to_rabbit_mq(message: json):
     connection = None
     try:
         connection = await aio_pika.connect_robust(
-            url=RABBIT_MQ_URL,
+            url=Config.RABBIT_MQ_URL,
         )
         channel = aio_pika.Channel = await connection.channel()
-        await channel.declare_queue(QUEUE)
+        await channel.declare_queue(Config.QUEUE)
         await channel.default_exchange.publish(
             message=aio_pika.Message(body=f"{message}".encode()),
-            routing_key=QUEUE
+            routing_key=Config.QUEUE
         )
         logger.error(f'MESSAGE HAS BEEN SENT: {message}.')
     except Exception as error:
@@ -62,10 +62,10 @@ def send_to_email(message: str, email: str, subject: str):
         connection = smtplib.SMTP(email, 587)
         connection.starttls()
 
-        connection.login(SENDER_EMAIL, SENDER_PASSWORD)
+        connection.login(Config.SENDER_EMAIL, Config.SENDER_PASSWORD)
         message = MIMEText(message)
         message["Subject"] = subject
-        connection.sendmail(SENDER_EMAIL, SENDER_EMAIL, message.as_string())
+        connection.sendmail(Config.SENDER_EMAIL, Config.SENDER_EMAIL, message.as_string())
 
         logger.error(f'MESSAGE HAS BEEN SENT: {message}.')
     except Exception as error:

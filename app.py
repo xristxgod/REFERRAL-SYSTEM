@@ -1,6 +1,6 @@
-from src.db import db
+from src import db
 from src.services import search_by_ref_code, get_user_information, send_to
-from src.utils import generate_referral_code, get_datetime_now
+from src.utils import utils
 
 async def reg_new_user(username: str, email: str, password: str, referrer: str = None) -> bool:
     """
@@ -14,14 +14,14 @@ async def reg_new_user(username: str, email: str, password: str, referrer: str =
         if not referrer:
             return await db.create_referral_by_user_id(
                 user_id=user_id,
-                reg_time=get_datetime_now(),
-                referral_code=generate_referral_code(),
+                reg_time=utils.get_datetime_now(),
+                referral_code=utils.generate_referral_code(),
                 ref_users='{"lvl_1": [], "lvl_2": [], "lvl_3": [], "lvl_4": []}'
             )
         await db.create_referral_by_user_id(
             user_id=user_id,
-            reg_time=get_datetime_now(),
-            referral_code=generate_referral_code(),
+            reg_time=utils.get_datetime_now(),
+            referral_code=utils.generate_referral_code(),
             ref_users='{"lvl_1": [], "lvl_2": [], "lvl_3": [], "lvl_4": []}',
             referrer=referrer
         )
